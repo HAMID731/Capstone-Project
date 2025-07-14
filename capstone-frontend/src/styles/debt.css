@@ -1,0 +1,22 @@
+.debt-page .data-card.debt-card {
+    background-color: #fff3e0;
+    border: 1px solid #ffcc80;
+}
+
+.debt-page .data-card.debt-card h3 {
+    color: #ef6c00;
+}
+
+.debt-page .data-card.debt-card.debt-paid {
+    background-color: #e8f5e9;
+    border-color: #a5d6a7;
+    opacity: 0.8;
+}
+
+.debt-page .data-card.debt-paid h3 {
+    color: #2e7d32;
+}
+
+.debt-page .data-card.debt-card .card-actions {
+    justify-content: flex-end;
+}

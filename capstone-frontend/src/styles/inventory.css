@@ -1,0 +1,13 @@
+.inventory-page .data-card.inventory-card {
+    background-color: #e8f5e9;
+    border: 1px solid #a5d6a7;
+}
+
+.inventory-page .data-card.inventory-card h3 {
+    color: #2e7d32;
+}
+
+.inventory-card .card-actions {
+    justify-content: space-around;
+    margin-top: 25px;
+}

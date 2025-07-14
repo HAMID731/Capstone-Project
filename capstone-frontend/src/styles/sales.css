@@ -1,0 +1,12 @@
+.sales-page .data-card.sales-card {
+    background-color: #e3f2fd;
+    border: 1px solid #90caf9;
+}
+
+.sales-page .data-card.sales-card h3 {
+    color: #1976D2;
+}
+
+.sales-page .data-card.sales-card .card-actions {
+    justify-content: flex-end;
+}
