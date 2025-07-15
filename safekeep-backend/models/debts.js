@@ -1,14 +1,12 @@
-const mongoose = require('mongoose');
+const debtSchema = {
+    id: String,
+    customerName: String,
+    amount: Number,
+    dueDate: Date,
+    paid: {
+        type: Boolean,
+        default: false
+    }
+};
 
-const debtSchema = new mongoose.Schema({
-  customerName: String,
-  amount: Number,
-  dueDate: Date,
-  settled: {
-    type: Boolean,
-    default: false
-  },
-  syncedFrom: String
-});
-
-module.exports = mongoose.model('Debt', debtSchema);
+module.exports = debtSchema;

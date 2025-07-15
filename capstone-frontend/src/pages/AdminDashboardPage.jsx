@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { registerCashier, registerInventoryManager } from '../api/auth';
-import { motion } from 'framer-motion';
+import { registerCashier, registerInventoryManager, getAllUsers, deleteUser } from '../api/auth';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import '../styles/dashboard.css';
 import '../styles/forms.css';
 
@@ -14,6 +15,28 @@ const AdminDashboardPage = () => {
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [showRegisterForm, setShowRegisterForm] = useState(false);
+    const [systemUsers, setSystemUsers] = useState([]);
+    const [loadingUsers, setLoadingUsers] = useState(true);
+    const [showUserList, setShowUserList] = useState(false);
+
+    useEffect(() => {
+        if (user?.role === 'BUSINESS_OWNER') {
+            fetchSystemUsers();
+        }
+    }, [user]);
+
+    const fetchSystemUsers = async () => {
+        setLoadingUsers(true);
+        try {
+            const users = await getAllUsers();
+            setSystemUsers(users);
+        } catch (err) {
+            setError(err.response?.data?.message || err.message || 'Failed to load system users.');
+            console.error(err);
+        } finally {
+            setLoadingUsers(false);
+        }
+    };
 
     const handleRegisterNewUser = async (e) => {
         e.preventDefault();
@@ -24,7 +47,6 @@ const AdminDashboardPage = () => {
                 username: newUsername,
                 password: newPassword,
                 email: newEmail,
-                role: newUserRole
             };
 
             let response;
@@ -41,9 +63,23 @@ const AdminDashboardPage = () => {
             setNewPassword('');
             setNewEmail('');
             setShowRegisterForm(false);
+            fetchSystemUsers();
         } catch (err) {
             setError(err.response?.data?.message || err.message || `Failed to register ${newUserRole}.`);
             console.error(err);
+        }
+    };
+
+    const handleDeleteUser = async (userId, usernameToDelete) => {
+        if (window.confirm(`Are you sure you want to delete user "${usernameToDelete}"? This action cannot be undone.`)) {
+            try {
+                await deleteUser(userId);
+                setMessage(`User "${usernameToDelete}" deleted successfully.`);
+                fetchSystemUsers();
+            } catch (err) {
+                setError(err.response?.data?.message || err.message || `Failed to delete user "${usernameToDelete}".`);
+                console.error(err);
+            }
         }
     };
 
@@ -86,8 +122,15 @@ const AdminDashboardPage = () => {
                         >
                             {showRegisterForm ? 'Hide Registration Form' : 'Register New User'}
                         </motion.button>
-                        {/* You'd add more buttons for 'Update User Information', 'Deactivate/Delete User' here */}
-                        <a href="/users/manage" className="link-button">View All Users</a> {/* Placeholder link */}
+                        <motion.button
+                            onClick={() => setShowUserList(!showUserList)}
+                            className="link-button"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            style={{ marginLeft: '10px' }}
+                        >
+                            {showUserList ? 'Hide All Users' : 'View All Users'}
+                        </motion.button>
                     </motion.div>
 
                     <motion.div
@@ -98,54 +141,103 @@ const AdminDashboardPage = () => {
                     >
                         <h3>System Overview</h3>
                         <p>Access inventory, sales, and debt records for full oversight.</p>
-                        <a href="/inventory" className="link-button">View Inventory</a>
-                        <a href="/sales" className="link-button">View Sales</a>
-                        <a href="/debt" className="link-button">View Debts</a>
+                        <Link to="/inventory" className="link-button">View Inventory</Link>
+                        <Link to="/sales" className="link-button">View Sales</Link>
+                        <Link to="/debt" className="link-button">View Debts</Link>
                     </motion.div>
                 </div>
 
-                {showRegisterForm && (
-                    <motion.section
-                        className="register-user-section form-section"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                    >
-                        <h2>Register New System User</h2>
-                        <form onSubmit={handleRegisterNewUser} className="app-form">
-                            {message && <p className="success-message">{message}</p>}
-                            {error && <p className="error-message">{error}</p>}
-                            <div className="form-group">
-                                <label htmlFor="newUsername">Username</label>
-                                <input type="text" id="newUsername" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} required />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="newPassword">Password</label>
-                                <input type="password" id="newPassword" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="newEmail">Email</label>
-                                <input type="email" id="newEmail" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} required />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="newUserRole">Role</label>
-                                <select id="newUserRole" value={newUserRole} onChange={(e) => setNewUserRole(e.target.value)}>
-                                    <option value="CASHIER">Cashier</option>
-                                    <option value="INVENTORY_MANAGER">Inventory Manager</option>
-                                </select>
-                            </div>
-                            <motion.button
-                                type="submit"
-                                className="primary-button"
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                Register User
-                            </motion.button>
-                        </form>
-                    </motion.section>
-                )}
+                <AnimatePresence>
+                    {showRegisterForm && (
+                        <motion.section
+                            className="register-user-section form-section"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <h2>Register New System User</h2>
+                            <form onSubmit={handleRegisterNewUser} className="app-form">
+                                {message && <p className="success-message">{message}</p>}
+                                {error && <p className="error-message">{error}</p>}
+                                <div className="form-group">
+                                    <label htmlFor="newUsername">Username</label>
+                                    <input type="text" id="newUsername" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} required />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="newPassword">Password</label>
+                                    <input type="password" id="newPassword" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="newEmail">Email</label>
+                                    <input type="email" id="newEmail" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} required />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="newUserRole">Role</label>
+                                    <select id="newUserRole" value={newUserRole} onChange={(e) => setNewUserRole(e.target.value)}>
+                                        <option value="CASHIER">Cashier</option>
+                                        <option value="INVENTORY_MANAGER">Inventory Manager</option>
+                                    </select>
+                                </div>
+                                <motion.button
+                                    type="submit"
+                                    className="primary-button"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    Register User
+                                </motion.button>
+                            </form>
+                        </motion.section>
+                    )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                    {showUserList && (
+                        <motion.section
+                            className="user-list-section data-list-section"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <h2>System Users</h2>
+                            {loadingUsers ? (
+                                <div className="loading-spinner">Loading users...</div>
+                            ) : systemUsers.length === 0 ? (
+                                <p className="no-data-message">No system users found (besides yourself).</p>
+                            ) : (
+                                <div className="data-cards-container">
+                                    {systemUsers.map(sysUser => (
+                                        <motion.div
+                                            key={sysUser.id}
+                                            className="data-card user-card"
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, scale: 0.8 }}
+                                            transition={{ duration: 0.3 }}
+                                            layout
+                                        >
+                                            <h3>{sysUser.username}</h3>
+                                            <p><strong>Role:</strong> {sysUser.role}</p>
+                                            <p><strong>Email:</strong> {sysUser.email}</p>
+                                            {sysUser.id !== user.id && (
+                                                <motion.button
+                                                    onClick={() => handleDeleteUser(sysUser.id, sysUser.username)}
+                                                    className="action-button delete-button"
+                                                    whileHover={{ scale: 1.05 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                >
+                                                    Delete User
+                                                </motion.button>
+                                            )}
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            )}
+                        </motion.section>
+                    )}
+                </AnimatePresence>
             </section>
         </motion.div>
     );

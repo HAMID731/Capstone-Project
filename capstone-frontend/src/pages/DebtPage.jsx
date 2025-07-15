@@ -18,6 +18,8 @@ const DebtPage = () => {
     const [showForm, setShowForm] = useState(false);
     const [editingDebt, setEditingDebt] = useState(null);
     const [loadingDebts, setLoadingDebts] = useState(true);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [debtToDelete, setDebtToDelete] = useState(null);
 
     const canManageDebts = hasRole('BUSINESS_OWNER') || hasRole('CASHIER');
 
@@ -46,13 +48,13 @@ const DebtPage = () => {
             const debtData = {
                 customerName,
                 amount: parseFloat(amount),
-                dueDate: dueDate,
-                paid: paid
+                dueDate,
+                paid
             };
 
             if (editingDebt) {
-                await updateDebt(editingDebt.debtId, debtData);
-                setMessage(`Debt record ${editingDebt.debtId} updated successfully!`);
+                await updateDebt(editingDebt.id, debtData);
+                setMessage(`Debt record ${editingDebt.id} updated successfully!`);
             } else {
                 await addDebt(debtData);
                 setMessage(`Debt record added successfully!`);
@@ -69,21 +71,27 @@ const DebtPage = () => {
         setEditingDebt({ ...debt });
         setCustomerName(debt.customerName);
         setAmount(debt.amount);
-        setDueDate(debt.dueDate.split('T')[0]);
+        setDueDate(new Date(debt.dueDate).toISOString().split('T')[0]);
         setPaid(debt.paid);
         setShowForm(true);
     };
 
-    const handleDelete = async (debtId, customerName) => {
-        if (window.confirm(`Are you sure you want to delete debt for ${customerName}?`)) {
-            try {
-                await deleteDebt(debtId);
-                setMessage(`Debt record for ${customerName} deleted successfully.`);
-                setDebtRecords(prev => prev.filter(debt => debt.debtId !== debtId));
-            } catch (err) {
-                setError(err.response?.data?.message || err.message || 'Failed to delete debt.');
-                console.error(err);
-            }
+    const confirmDelete = (debtId, customerName) => {
+        setDebtToDelete({ debtId, customerName });
+        setShowConfirmModal(true);
+    };
+
+    const executeDelete = async () => {
+        if (!debtToDelete) return;
+        try {
+            await deleteDebt(debtToDelete.debtId);
+            setMessage(`Debt record for ${debtToDelete.customerName} deleted successfully.`);
+            setDebtRecords(prev => prev.filter(debt => debt.id !== debtToDelete.debtId));
+            setShowConfirmModal(false);
+            setDebtToDelete(null);
+        } catch (err) {
+            setError(err.response?.data?.message || err.message || 'Failed to delete debt.');
+            console.error(err);
         }
     };
 
@@ -202,7 +210,7 @@ const DebtPage = () => {
                         <AnimatePresence>
                             {debtRecords.map(debt => (
                                 <motion.div
-                                    key={debt.debtId}
+                                    key={debt.id}
                                     className={`data-card debt-card ${debt.paid ? 'debt-paid' : 'debt-unpaid'}`}
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -211,7 +219,7 @@ const DebtPage = () => {
                                     layout
                                 >
                                     <h3>{debt.customerName}</h3>
-                                    <p><strong>ID:</strong> {debt.debtId}</p>
+                                    <p><strong>ID:</strong> {debt.id}</p>
                                     <p><strong>Amount:</strong> ${debt.amount?.toFixed(2)}</p>
                                     <p><strong>Due Date:</strong> {new Date(debt.dueDate).toLocaleDateString()}</p>
                                     <p><strong>Status:</strong> {debt.paid ? 'Paid' : 'Unpaid'}</p>
@@ -226,7 +234,7 @@ const DebtPage = () => {
                                                 Edit
                                             </motion.button>
                                             <motion.button
-                                                onClick={() => handleDelete(debt.debtId, debt.customerName)}
+                                                onClick={() => confirmDelete(debt.id, debt.customerName)}
                                                 className="action-button delete-button"
                                                 whileHover={{ scale: 1.05 }}
                                                 whileTap={{ scale: 0.95 }}
@@ -241,6 +249,47 @@ const DebtPage = () => {
                     </div>
                 )}
             </section>
+
+            <AnimatePresence>
+                {showConfirmModal && (
+                    <motion.div
+                        className="modal-backdrop"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setShowConfirmModal(false)}
+                    >
+                        <motion.div
+                            className="modal-content"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <h3>Confirm Deletion</h3>
+                            <p>Are you sure you want to delete debt for <strong>{debtToDelete?.customerName}</strong>?</p>
+                            <div className="modal-actions">
+                                <motion.button
+                                    onClick={executeDelete}
+                                    className="primary-button"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    Yes, Delete
+                                </motion.button>
+                                <motion.button
+                                    onClick={() => setShowConfirmModal(false)}
+                                    className="secondary-button"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    Cancel
+                                </motion.button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 };

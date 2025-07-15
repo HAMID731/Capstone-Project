@@ -19,11 +19,15 @@ const InventoryPage = () => {
     const [showAddItemForm, setShowAddItemForm] = useState(false);
     const [loadingItems, setLoadingItems] = useState(true);
     const [editingItem, setEditingItem] = useState(null);
+    const [showStockUpdateModal, setShowStockUpdateModal] = useState(false);
+    const [itemToUpdateStock, setItemToUpdateStock] = useState(null);
+    const [stockUpdateQuantity, setStockUpdateQuantity] = useState('');
+    const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
 
     const canAddRemove = hasRole('BUSINESS_OWNER');
-    const canUpdateStock = hasRole('BUSINESS_OWNER') || hasRole('INVENTORY_MANAGER'); // BO and IM can update stock
+    const canUpdateStock = hasRole('BUSINESS_OWNER') || hasRole('INVENTORY_MANAGER');
 
-    
     useEffect(() => {
         fetchInventoryItems();
     }, []);
@@ -54,36 +58,16 @@ const InventoryPage = () => {
             const addedItem = await addItemToInventory(itemData);
             setMessage(`Item "${addedItem.itemName}" added successfully!`);
             fetchInventoryItems();
-            setNewItemName('');
-            setNewQuantity('');
-            setNewUnitCost('');
-            setShowAddItemForm(false);
+            resetForm();
         } catch (err) {
             setError(err.response?.data?.message || err.message || 'Failed to add item.');
             console.error(err);
         }
     };
 
-    const handleUpdateStock = async (itemId, currentQuantity) => {
-        const updatedQuantity = prompt(`Enter new quantity for item ID ${itemId} (Current: ${currentQuantity}):`, currentQuantity);
-        if (updatedQuantity !== null && !isNaN(updatedQuantity) && parseInt(updatedQuantity) >= 0) {
-            try {
-                await updateInventoryStock(itemId, parseInt(updatedQuantity));
-                setMessage(`Stock for item ${itemId} updated successfully.`);
-                fetchInventoryItems();
-            } catch (err) {
-                setError(err.response?.data?.message || err.message || 'Failed to update stock.');
-                console.error(err);
-            }
-        } else if (updatedQuantity !== null) {
-            alert("Invalid quantity. Please enter a non-negative number.");
-        }
-    };
-
     const handleEditItemDetails = (item) => {
         setEditingItem({ ...item });
-        setShowAddItemForm(true); 
-
+        setShowAddItemForm(true);
         setNewItemName(item.itemName);
         setNewQuantity(item.quantity);
         setNewUnitCost(item.unitCost);
@@ -99,31 +83,69 @@ const InventoryPage = () => {
                 quantity: parseInt(newQuantity),
                 unitCost: parseFloat(newUnitCost)
             };
-            await updateInventoryItem(editingItem.itemId, updatedData);
+            await updateInventoryItem(editingItem.id, updatedData);
             setMessage(`Item "${updatedData.itemName}" updated successfully!`);
             fetchInventoryItems();
-            setEditingItem(null);
-            setShowAddItemForm(false);
-            setNewItemName('');
-            setNewQuantity('');
-            setNewUnitCost('');
+            resetForm();
         } catch (err) {
             setError(err.response?.data?.message || err.message || 'Failed to update item details.');
             console.error(err);
         }
     };
 
-    const handleRemoveItem = async (itemId, itemName) => {
-        if (window.confirm(`Are you sure you want to remove "${itemName}" from inventory? This action cannot be undone.`)) {
-            try {
-                await removeInventoryItem(itemId);
-                setMessage(`Item "${itemName}" removed successfully.`);
-                setItems(prev => prev.filter(item => item.itemId !== itemId));
-            } catch (err) {
-                setError(err.response?.data?.message || err.message || 'Failed to remove item.');
-                console.error(err);
-            }
+    const openStockUpdateModal = (item) => {
+        setItemToUpdateStock(item);
+        setStockUpdateQuantity(item.quantity);
+        setShowStockUpdateModal(true);
+    };
+
+    const handleStockUpdateSubmit = async (e) => {
+        e.preventDefault();
+        setMessage('');
+        setError('');
+        if (!itemToUpdateStock || isNaN(parseInt(stockUpdateQuantity)) || parseInt(stockUpdateQuantity) < 0) {
+            setError("Invalid quantity. Please enter a non-negative number.");
+            return;
         }
+
+        try {
+            await updateInventoryStock(itemToUpdateStock.id, parseInt(stockUpdateQuantity));
+            setMessage(`Stock for item ${itemToUpdateStock.itemName} updated successfully.`);
+            fetchInventoryItems();
+            setShowStockUpdateModal(false);
+            setItemToUpdateStock(null);
+            setStockUpdateQuantity('');
+        } catch (err) {
+            setError(err.response?.data?.message || err.message || 'Failed to update stock.');
+            console.error(err);
+        }
+    };
+
+    const confirmRemoveItem = (itemId, itemName) => {
+        setItemToDelete({ itemId, itemName });
+        setShowConfirmDeleteModal(true);
+    };
+
+    const executeRemoveItem = async () => {
+        if (!itemToDelete) return;
+        try {
+            await removeInventoryItem(itemToDelete.itemId);
+            setMessage(`Item "${itemToDelete.itemName}" removed successfully.`);
+            setItems(prev => prev.filter(item => item.id !== itemToDelete.itemId));
+            setShowConfirmDeleteModal(false);
+            setItemToDelete(null);
+        } catch (err) {
+            setError(err.response?.data?.message || err.message || 'Failed to remove item.');
+            console.error(err);
+        }
+    };
+
+    const resetForm = () => {
+        setEditingItem(null);
+        setShowAddItemForm(false);
+        setNewItemName('');
+        setNewQuantity('');
+        setNewUnitCost('');
     };
 
     return (
@@ -203,13 +225,7 @@ const InventoryPage = () => {
                                 <motion.button
                                     type="button"
                                     className="secondary-button"
-                                    onClick={() => {
-                                        setEditingItem(null);
-                                        setShowAddItemForm(false);
-                                        setNewItemName('');
-                                        setNewQuantity('');
-                                        setNewUnitCost('');
-                                    }}
+                                    onClick={resetForm}
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     style={{ marginLeft: '10px' }}
@@ -233,7 +249,7 @@ const InventoryPage = () => {
                         <AnimatePresence>
                             {items.map(item => (
                                 <motion.div
-                                    key={item.itemId}
+                                    key={item.id}
                                     className="data-card inventory-card"
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -242,14 +258,14 @@ const InventoryPage = () => {
                                     layout
                                 >
                                     <h3>{item.itemName}</h3>
-                                    <p><strong>ID:</strong> {item.itemId}</p>
+                                    <p><strong>ID:</strong> {item.id}</p>
                                     <p><strong>Quantity:</strong> {item.quantity}</p>
                                     <p><strong>Unit Cost:</strong> ${item.unitCost?.toFixed(2)}</p>
                                     <p><strong>Total Value:</strong> ${(item.quantity * item.unitCost)?.toFixed(2)}</p>
                                     <div className="card-actions">
                                         {canUpdateStock && (
                                             <motion.button
-                                                onClick={() => handleUpdateStock(item.itemId, item.quantity)}
+                                                onClick={() => openStockUpdateModal(item)}
                                                 className="action-button update-stock-button"
                                                 whileHover={{ scale: 1.05 }}
                                                 whileTap={{ scale: 0.95 }}
@@ -268,7 +284,7 @@ const InventoryPage = () => {
                                                     Edit Details
                                                 </motion.button>
                                                 <motion.button
-                                                    onClick={() => handleRemoveItem(item.itemId, item.itemName)}
+                                                    onClick={() => confirmRemoveItem(item.id, item.itemName)}
                                                     className="action-button remove-item-button"
                                                     whileHover={{ scale: 1.05 }}
                                                     whileTap={{ scale: 0.95 }}
@@ -284,6 +300,100 @@ const InventoryPage = () => {
                     </div>
                 )}
             </section>
+
+            <AnimatePresence>
+                {showStockUpdateModal && (
+                    <motion.div
+                        className="modal-backdrop"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setShowStockUpdateModal(false)}
+                    >
+                        <motion.div
+                            className="modal-content"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <h3>Update Stock for {itemToUpdateStock?.itemName}</h3>
+                            <form onSubmit={handleStockUpdateSubmit} className="app-form">
+                                {error && <p className="error-message">{error}</p>}
+                                <div className="form-group">
+                                    <label htmlFor="stockQuantity">New Quantity</label>
+                                    <input
+                                        type="number"
+                                        id="stockQuantity"
+                                        value={stockUpdateQuantity}
+                                        onChange={(e) => setStockUpdateQuantity(e.target.value)}
+                                        required
+                                        min="0"
+                                    />
+                                </div>
+                                <div className="modal-actions">
+                                    <motion.button
+                                        type="submit"
+                                        className="primary-button"
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        Update
+                                    </motion.button>
+                                    <motion.button
+                                        type="button"
+                                        onClick={() => setShowStockUpdateModal(false)}
+                                        className="secondary-button"
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        Cancel
+                                    </motion.button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+
+                {showConfirmDeleteModal && (
+                    <motion.div
+                        className="modal-backdrop"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setShowConfirmDeleteModal(false)}
+                    >
+                        <motion.div
+                            className="modal-content"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <h3>Confirm Deletion</h3>
+                            <p>Are you sure you want to remove "<strong>{itemToDelete?.itemName}</strong>" from inventory? This action cannot be undone.</p>
+                            <div className="modal-actions">
+                                <motion.button
+                                    onClick={executeRemoveItem}
+                                    className="primary-button"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    Yes, Remove
+                                </motion.button>
+                                <motion.button
+                                    onClick={() => setShowConfirmDeleteModal(false)}
+                                    className="secondary-button"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    Cancel
+                                </motion.button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 };

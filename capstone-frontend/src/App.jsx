@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AnimatePresence } from 'framer-motion';
 
-
 import Navbar from './component/Navbar.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterBusinessOwnerPage from './pages/RegisterBusinessOwnerPage.jsx';
@@ -15,7 +14,6 @@ import SalesPage from './pages/SalesPage.jsx';
 import DebtPage from './pages/DebtPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
 
-
 import './styles/components/navbar.css';
 import './styles/global.css';
 import './styles/forms.css';
@@ -25,16 +23,11 @@ import './styles/inventory.css';
 import './styles/sales.css';
 import './styles/debt.css';
 
-
 const PrivateRoute = ({ children, allowedRoles }) => {
     const { isAuthenticated, hasRole, loading } = useAuth();
 
     if (loading) return <div className="loading-container">Loading authentication...</div>;
-
-    if (!isAuthenticated) {
-        return <Navigate to="/login" replace />;
-    }
-
+    if (!isAuthenticated) return <Navigate to="/login" replace />;
     if (allowedRoles && !allowedRoles.some(role => hasRole(role))) {
         return <Navigate to="/login" replace />;
     }
@@ -66,14 +59,11 @@ function App() {
             <AuthProvider>
                 <div className="App">
                     <Navbar />
-                    {}
                     <AnimatePresence mode="wait">
                         <Routes>
                             <Route path="/login" element={<LoginPage />} />
-                            <Route path="/register" element={<RegisterBusinessOwnerPage />} /> {/* Dedicated registration page for initial BO */}
+                            <Route path="/register" element={<RegisterBusinessOwnerPage />} />
                             <Route path="/navbar" element={<Navbar />} />
-
-                            {/* Protected Routes */}
                             <Route path="/admin-dashboard" element={
                                 <PrivateRoute allowedRoles={['BUSINESS_OWNER']}>
                                     <AdminDashboardPage />
@@ -89,7 +79,6 @@ function App() {
                                     <CashierDashboardPage />
                                 </PrivateRoute>
                             } />
-
                             <Route path="/inventory" element={
                                 <PrivateRoute allowedRoles={['BUSINESS_OWNER', 'INVENTORY_MANAGER']}>
                                     <InventoryPage />
@@ -105,8 +94,6 @@ function App() {
                                     <DebtPage />
                                 </PrivateRoute>
                             } />
-
-                            {}
                             <Route path="/" element={<HomeRedirect />} />
                             <Route path="*" element={<NotFoundPage />} />
                         </Routes>

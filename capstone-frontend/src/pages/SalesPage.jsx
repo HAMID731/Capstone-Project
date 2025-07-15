@@ -16,6 +16,8 @@ const SalesPage = () => {
     const [showForm, setShowForm] = useState(false);
     const [editingSale, setEditingSale] = useState(null);
     const [loadingSales, setLoadingSales] = useState(true);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [saleToDelete, setSaleToDelete] = useState(null);
 
     const canManageSales = hasRole('BUSINESS_OWNER') || hasRole('CASHIER');
 
@@ -48,8 +50,8 @@ const SalesPage = () => {
             };
 
             if (editingSale) {
-                await updateSale(editingSale.recordId, saleData);
-                setMessage(`Sale record ${editingSale.recordId} updated successfully!`);
+                await updateSale(editingSale.id, saleData);
+                setMessage(`Sale record ${editingSale.id} updated successfully!`);
             } else {
                 await addSale(saleData);
                 setMessage(`Sale recorded successfully!`);
@@ -69,16 +71,23 @@ const SalesPage = () => {
         setShowForm(true);
     };
 
-    const handleDelete = async (recordId, amount) => {
-        if (window.confirm(`Are you sure you want to delete this sale record (Amount: $${amount})?`)) {
-            try {
-                await deleteSale(recordId);
-                setMessage(`Sale record ${recordId} deleted successfully.`);
-                setSalesRecords(prev => prev.filter(sale => sale.recordId !== recordId));
-            } catch (err) {
-                setError(err.response?.data?.message || err.message || 'Failed to delete sale.');
-                console.error(err);
-            }
+    const confirmDelete = (recordId, amount) => {
+        setSaleToDelete({ recordId, amount });
+        setShowConfirmModal(true);
+    };
+
+    const executeDelete = async () => {
+        if (!saleToDelete) return;
+
+        try {
+            await deleteSale(saleToDelete.recordId);
+            setMessage(`Sale record ${saleToDelete.recordId} deleted successfully.`);
+            setSalesRecords(prev => prev.filter(sale => sale.id !== saleToDelete.recordId));
+            setShowConfirmModal(false);
+            setSaleToDelete(null);
+        } catch (err) {
+            setError(err.response?.data?.message || err.message || 'Failed to delete sale.');
+            console.error(err);
         }
     };
 
@@ -185,7 +194,7 @@ const SalesPage = () => {
                         <AnimatePresence>
                             {salesRecords.map(sale => (
                                 <motion.div
-                                    key={sale.recordId}
+                                    key={sale.id}
                                     className="data-card sales-card"
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -193,7 +202,7 @@ const SalesPage = () => {
                                     transition={{ duration: 0.3 }}
                                     layout
                                 >
-                                    <h3>Sale ID: {sale.recordId}</h3>
+                                    <h3>Sale ID: {sale.id}</h3>
                                     <p><strong>Amount:</strong> ${sale.amount?.toFixed(2)}</p>
                                     <p><strong>Customer:</strong> {sale.customerName || 'N/A'}</p>
                                     <p><strong>Date:</strong> {new Date(sale.date).toLocaleString()}</p>
@@ -208,7 +217,7 @@ const SalesPage = () => {
                                                 Edit
                                             </motion.button>
                                             <motion.button
-                                                onClick={() => handleDelete(sale.recordId, sale.amount)}
+                                                onClick={() => confirmDelete(sale.id, sale.amount)}
                                                 className="action-button delete-button"
                                                 whileHover={{ scale: 1.05 }}
                                                 whileTap={{ scale: 0.95 }}
@@ -223,6 +232,47 @@ const SalesPage = () => {
                     </div>
                 )}
             </section>
+
+            <AnimatePresence>
+                {showConfirmModal && (
+                    <motion.div
+                        className="modal-backdrop"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setShowConfirmModal(false)}
+                    >
+                        <motion.div
+                            className="modal-content"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <h3>Confirm Deletion</h3>
+                            <p>Are you sure you want to delete this sale record (Amount: ${saleToDelete?.amount})?</p>
+                            <div className="modal-actions">
+                                <motion.button
+                                    onClick={executeDelete}
+                                    className="primary-button"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    Yes, Delete
+                                </motion.button>
+                                <motion.button
+                                    onClick={() => setShowConfirmModal(false)}
+                                    className="secondary-button"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    Cancel
+                                </motion.button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 };
