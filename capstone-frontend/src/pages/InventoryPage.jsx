@@ -25,7 +25,7 @@ const InventoryPage = () => {
     const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
 
-    const canAddRemove = hasRole('BUSINESS_OWNER');
+    const canAddRemove = hasRole('BUSINESS_OWNER') || hasRole('INVENTORY_MANAGER');
     const canUpdateStock = hasRole('BUSINESS_OWNER') || hasRole('INVENTORY_MANAGER');
 
     useEffect(() => {
@@ -260,8 +260,8 @@ const InventoryPage = () => {
                                     <h3>{item.itemName}</h3>
                                     <p><strong>ID:</strong> {item.id}</p>
                                     <p><strong>Quantity:</strong> {item.quantity}</p>
-                                    <p><strong>Unit Cost:</strong> ${item.unitCost?.toFixed(2)}</p>
-                                    <p><strong>Total Value:</strong> ${(item.quantity * item.unitCost)?.toFixed(2)}</p>
+                                    <p><strong>Unit Cost:</strong> #{item.unitCost?.toFixed(2)}</p>
+                                    <p><strong>Total Value:</strong> #{(item.quantity * item.unitCost)?.toFixed(2)}</p>
                                     <div className="card-actions">
                                         {canUpdateStock && (
                                             <motion.button

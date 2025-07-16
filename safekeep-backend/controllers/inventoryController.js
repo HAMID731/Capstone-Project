@@ -47,7 +47,6 @@ exports.updateItem = async (req, res) => {
     }
 };
 
-// Specific endpoint for updating stock quantity
 exports.updateItemStock = async (req, res) => {
     try {
         const itemId = req.params.id;
@@ -81,5 +80,4 @@ exports.deleteItem = async (req, res) => {
     } catch (err) {
         console.error('Error deleting inventory item:', err);
         res.status(500).json({ message: err.message || "Failed to delete item" });
-    }
-  };
+    }};
