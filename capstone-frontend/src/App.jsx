@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AnimatePresence } from 'framer-motion';
 
+import HomePage from './pages/HomePage';
 import Navbar from './component/Navbar.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterBusinessOwnerPage from './pages/RegisterBusinessOwnerPage.jsx';
@@ -61,6 +62,7 @@ function App() {
                     <Navbar />
                     <AnimatePresence mode="wait">
                         <Routes>
+                            <Route path="/" element={<HomePage />} />
                             <Route path="/login" element={<LoginPage />} />
                             <Route path="/register" element={<RegisterBusinessOwnerPage />} />
                             <Route path="/navbar" element={<Navbar />} />
