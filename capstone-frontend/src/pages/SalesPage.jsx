@@ -9,8 +9,8 @@ import '../styles/sales.css';
 const SalesPage = () => {
     const { user, logout, hasRole } = useAuth();
     const [salesRecords, setSalesRecords] = useState([]);
-    const [itemName, setItemName] = useState('');
-    const [amount, setAmount] = useState('');
+    const [itemName, setItemName] = useState(''); // Initialize to empty string
+    const [amount, setAmount] = useState('');     // Initialize to empty string
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [showForm, setShowForm] = useState(false);
@@ -20,6 +20,7 @@ const SalesPage = () => {
     const [saleToDelete, setSaleToDelete] = useState(null);
 
     const canManageSales = hasRole('BUSINESS_OWNER') || hasRole('CASHIER');
+
     const totalSales = useMemo(() => {
         return salesRecords.reduce((sum, record) => sum + (record.amount || 0), 0);
     }, [salesRecords]);
@@ -79,8 +80,9 @@ const SalesPage = () => {
 
     const handleEdit = (sale) => {
         setEditingSale({ ...sale });
-        setItemName(sale.itemName);
-        setAmount(sale.amount);
+        // Use a fallback to an empty string if sale.itemName is undefined or null
+        setItemName(sale.itemName || '');
+        setAmount(sale.amount || ''); // Also ensure amount is a string for the input
         setShowForm(true);
     };
 
@@ -106,9 +108,8 @@ const SalesPage = () => {
 
     const resetForm = () => {
         setEditingSale(null);
-        setItemName('');
-        setAmount('');
-        // customerName state is removed
+        setItemName(''); // Always reset to empty string
+        setAmount('');     // Always reset to empty string
         setShowForm(false);
     };
 
@@ -140,8 +141,8 @@ const SalesPage = () => {
                         onClick={() => {
                             setShowForm(!showForm);
                             setEditingSale(null);
-                            setItemName('');
-                            setAmount('');
+                            setItemName(''); // Ensure it's reset to empty string when toggling form
+                            setAmount('');     // Ensure it's reset to empty string when toggling form
                         }}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -221,7 +222,8 @@ const SalesPage = () => {
                                         layout
                                     >
                                         <h3>Sale ID: {sale.id}</h3>
-                                        <p><strong>Item Name:</strong> {sale.itemName}</p>
+                                        {/* Use fallback for display if itemName is missing in old records */}
+                                        <p><strong>Item Name:</strong> {sale.itemName || 'N/A'}</p>
                                         <p><strong>Amount:</strong> ₦{sale.amount?.toFixed(2)}</p>
                                         <p><strong>Date:</strong> {new Date(sale.date).toLocaleString()}</p>
                                         {canManageSales && (

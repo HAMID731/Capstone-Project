@@ -684,7 +684,7 @@ function HomePage() {
 
             <DesktopCTABox>
               <LoginLink to="/login">Login</LoginLink>
-              <SignUpLink to="/signup">Sign Up</SignUpLink>
+              <SignUpLink to="/register">Sign Up</SignUpLink>
             </DesktopCTABox>
 
             <MobileMenuButtonWrapper>
@@ -703,7 +703,7 @@ function HomePage() {
               <MobileNavLink onClick={() => scrollToSection('contact')}>Contact Us</MobileNavLink>
               <MobileCTABox>
                 <MobileLoginLink to="/login">Login</MobileLoginLink>
-                <MobileSignUpLink to="/signup">Sign Up</MobileSignUpLink>
+                <MobileSignUpLink to="/register">Sign Up</MobileSignUpLink>
               </MobileCTABox>
             </MobileNavContent>
           </MobileNavMenu>
