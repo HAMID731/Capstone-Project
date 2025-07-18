@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { addSale, getAllSalesRecords, updateSale, deleteSale } from '../api/sales';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,8 +9,8 @@ import '../styles/sales.css';
 const SalesPage = () => {
     const { user, logout, hasRole } = useAuth();
     const [salesRecords, setSalesRecords] = useState([]);
+    const [itemName, setItemName] = useState('');
     const [amount, setAmount] = useState('');
-    const [customerName, setCustomerName] = useState('');
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [showForm, setShowForm] = useState(false);
@@ -20,6 +20,9 @@ const SalesPage = () => {
     const [saleToDelete, setSaleToDelete] = useState(null);
 
     const canManageSales = hasRole('BUSINESS_OWNER') || hasRole('CASHIER');
+    const totalSales = useMemo(() => {
+        return salesRecords.reduce((sum, record) => sum + (record.amount || 0), 0);
+    }, [salesRecords]);
 
     useEffect(() => {
         fetchSalesRecords();
@@ -42,10 +45,20 @@ const SalesPage = () => {
         e.preventDefault();
         setMessage('');
         setError('');
+
+        if (!itemName.trim()) {
+            setError("Item Name is required.");
+            return;
+        }
+        if (isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+            setError("Amount must be a positive number.");
+            return;
+        }
+
         try {
             const saleData = {
+                itemName: itemName.trim(),
                 amount: parseFloat(amount),
-                customerName: customerName || null,
                 date: new Date().toISOString()
             };
 
@@ -66,8 +79,8 @@ const SalesPage = () => {
 
     const handleEdit = (sale) => {
         setEditingSale({ ...sale });
+        setItemName(sale.itemName);
         setAmount(sale.amount);
-        setCustomerName(sale.customerName);
         setShowForm(true);
     };
 
@@ -93,8 +106,9 @@ const SalesPage = () => {
 
     const resetForm = () => {
         setEditingSale(null);
+        setItemName('');
         setAmount('');
-        setCustomerName('');
+        // customerName state is removed
         setShowForm(false);
     };
 
@@ -126,8 +140,8 @@ const SalesPage = () => {
                         onClick={() => {
                             setShowForm(!showForm);
                             setEditingSale(null);
+                            setItemName('');
                             setAmount('');
-                            setCustomerName('');
                         }}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -151,12 +165,12 @@ const SalesPage = () => {
                             {message && <p className="success-message">{message}</p>}
                             {error && <p className="error-message">{error}</p>}
                             <div className="form-group">
-                                <label htmlFor="amount">Amount</label>
-                                <input type="number" id="amount" value={amount} onChange={(e) => setAmount(e.target.value)} required min="0.01" step="0.01" />
+                                <label htmlFor="itemName">Item Name</label>
+                                <input type="text" id="itemName" value={itemName} onChange={(e) => setItemName(e.target.value)} required />
                             </div>
                             <div className="form-group">
-                                <label htmlFor="customerName">Customer Name (Optional)</label>
-                                <input type="text" id="customerName" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+                                <label htmlFor="amount">Amount</label>
+                                <input type="number" id="amount" value={amount} onChange={(e) => setAmount(e.target.value)} required min="0.01" step="0.01" />
                             </div>
                             <motion.button
                                 type="submit"
@@ -190,46 +204,51 @@ const SalesPage = () => {
                 ) : salesRecords.length === 0 ? (
                     <p className="no-data-message">No sales records found.</p>
                 ) : (
-                    <div className="data-cards-container">
-                        <AnimatePresence>
-                            {salesRecords.map(sale => (
-                                <motion.div
-                                    key={sale.id}
-                                    className="data-card sales-card"
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.8 }}
-                                    transition={{ duration: 0.3 }}
-                                    layout
-                                >
-                                    <h3>Sale ID: {sale.id}</h3>
-                                    <p><strong>Amount:</strong> ${sale.amount?.toFixed(2)}</p>
-                                    <p><strong>Customer:</strong> {sale.customerName || 'N/A'}</p>
-                                    <p><strong>Date:</strong> {new Date(sale.date).toLocaleString()}</p>
-                                    {canManageSales && (
-                                        <div className="card-actions">
-                                            <motion.button
-                                                onClick={() => handleEdit(sale)}
-                                                className="action-button edit-button"
-                                                whileHover={{ scale: 1.05 }}
-                                                whileTap={{ scale: 0.95 }}
-                                            >
-                                                Edit
-                                            </motion.button>
-                                            <motion.button
-                                                onClick={() => confirmDelete(sale.id, sale.amount)}
-                                                className="action-button delete-button"
-                                                whileHover={{ scale: 1.05 }}
-                                                whileTap={{ scale: 0.95 }}
-                                            >
-                                                Delete
-                                            </motion.button>
-                                        </div>
-                                    )}
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
-                    </div>
+                    <>
+                        <div className="total-sales-summary">
+                            <h3>Total Sales: ₦{totalSales.toFixed(2)}</h3>
+                        </div>
+                        <div className="data-cards-container">
+                            <AnimatePresence>
+                                {salesRecords.map(sale => (
+                                    <motion.div
+                                        key={sale.id}
+                                        className="data-card sales-card"
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.8 }}
+                                        transition={{ duration: 0.3 }}
+                                        layout
+                                    >
+                                        <h3>Sale ID: {sale.id}</h3>
+                                        <p><strong>Item Name:</strong> {sale.itemName}</p>
+                                        <p><strong>Amount:</strong> ₦{sale.amount?.toFixed(2)}</p>
+                                        <p><strong>Date:</strong> {new Date(sale.date).toLocaleString()}</p>
+                                        {canManageSales && (
+                                            <div className="card-actions">
+                                                <motion.button
+                                                    onClick={() => handleEdit(sale)}
+                                                    className="action-button edit-button"
+                                                    whileHover={{ scale: 1.05 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                >
+                                                    Edit
+                                                </motion.button>
+                                                <motion.button
+                                                    onClick={() => confirmDelete(sale.id, sale.amount)}
+                                                    className="action-button delete-button"
+                                                    whileHover={{ scale: 1.05 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                >
+                                                    Delete
+                                                </motion.button>
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </div>
+                    </>
                 )}
             </section>
 
@@ -250,7 +269,7 @@ const SalesPage = () => {
                             onClick={(e) => e.stopPropagation()}
                         >
                             <h3>Confirm Deletion</h3>
-                            <p>Are you sure you want to delete this sale record (Amount: ${saleToDelete?.amount})?</p>
+                            <p>Are you sure you want to delete this sale record (Amount: ₦{saleToDelete?.amount})?</p>
                             <div className="modal-actions">
                                 <motion.button
                                     onClick={executeDelete}

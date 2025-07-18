@@ -1,7 +1,7 @@
 const salesSchema = {
     id: String,
+    itemName: String,
     amount: Number,
-    customerName: String,
     date: Date
 };
 
