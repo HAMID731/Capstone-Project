@@ -9,8 +9,8 @@ import '../styles/sales.css';
 const SalesPage = () => {
     const { user, logout, hasRole } = useAuth();
     const [salesRecords, setSalesRecords] = useState([]);
-    const [itemName, setItemName] = useState(''); // Initialize to empty string
-    const [amount, setAmount] = useState('');     // Initialize to empty string
+    const [itemName, setItemName] = useState('');
+    const [amount, setAmount] = useState('');
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [showForm, setShowForm] = useState(false);
@@ -45,7 +45,7 @@ const SalesPage = () => {
     const handleFormSubmit = async (e) => {
         e.preventDefault();
         setMessage('');
-        setError('');
+        setError(''); 
 
         if (!itemName.trim()) {
             setError("Item Name is required.");
@@ -80,9 +80,8 @@ const SalesPage = () => {
 
     const handleEdit = (sale) => {
         setEditingSale({ ...sale });
-        // Use a fallback to an empty string if sale.itemName is undefined or null
         setItemName(sale.itemName || '');
-        setAmount(sale.amount || ''); // Also ensure amount is a string for the input
+        setAmount(sale.amount || '');
         setShowForm(true);
     };
 
@@ -108,8 +107,8 @@ const SalesPage = () => {
 
     const resetForm = () => {
         setEditingSale(null);
-        setItemName(''); // Always reset to empty string
-        setAmount('');     // Always reset to empty string
+        setItemName('');
+        setAmount('');
         setShowForm(false);
     };
 
@@ -141,8 +140,8 @@ const SalesPage = () => {
                         onClick={() => {
                             setShowForm(!showForm);
                             setEditingSale(null);
-                            setItemName(''); // Ensure it's reset to empty string when toggling form
-                            setAmount('');     // Ensure it's reset to empty string when toggling form
+                            setItemName('');
+                            setAmount('');
                         }}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -221,11 +220,11 @@ const SalesPage = () => {
                                         transition={{ duration: 0.3 }}
                                         layout
                                     >
-                                        <h3>Sale ID: {sale.id}</h3>
-                                        {/* Use fallback for display if itemName is missing in old records */}
-                                        <p><strong>Item Name:</strong> {sale.itemName || 'N/A'}</p>
-                                        <p><strong>Amount:</strong> ₦{sale.amount?.toFixed(2)}</p>
-                                        <p><strong>Date:</strong> {new Date(sale.date).toLocaleString()}</p>
+                                        
+                                        <h3><strong>Item Name:</strong> {sale.itemName || 'N/A'}</h3>                                        
+                                        <p><strong>Sale ID: </strong> {sale.id}</p>
+                                        <p><strong>Date: </strong> {new Date(sale.date).toLocaleString()}</p>
+                                        <p><strong>Amount: ₦</strong>{sale.amount}</p>
                                         {canManageSales && (
                                             <div className="card-actions">
                                                 <motion.button

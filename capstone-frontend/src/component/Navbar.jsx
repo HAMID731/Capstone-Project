@@ -3,7 +3,25 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import '../styles/components/navbar.css';
+import {Shield} from 'lucide-react';
+import styled from 'styled-components';
 
+
+const LogoText = styled.span`
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+`;
+const LogoWrapper = styled.div`
+  display: flex;
+  align-items: center;
+`;
+const LogoIcon = styled(Shield)`
+  height: 2rem;
+  width: 2rem;
+  color: #2563eb;
+  margin-right: 0.5rem;
+`;
 const Navbar = () => {
     const { isAuthenticated, user, logout } = useAuth();
 
@@ -20,7 +38,10 @@ const Navbar = () => {
         >
             <div className="navbar-logo">
                 <Link to="/" className="logo-link">
-                    InventoryPro
+                    <LogoWrapper>
+                        <LogoIcon />
+                        <LogoText>SafeKeep</LogoText>
+                    </LogoWrapper>
                 </Link>
             </div>
             <ul className="navbar-links">
@@ -46,7 +67,6 @@ const Navbar = () => {
                 )}
             </ul>
             <div className="navbar-user-info">
-                <span>Hello, {user?.username} ({user?.role})</span>
                 <motion.button
                     onClick={logout}
                     className="navbar-logout-button"

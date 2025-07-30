@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { Menu, X, Shield, Users, Zap, Mail, Phone, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import styled from 'styled-components'; // Import styled from styled-components
-
-// --- Styled Components Definitions ---
+import styled from 'styled-components';
 
 const PageContainer = styled.div`
   min-height: 100vh;
