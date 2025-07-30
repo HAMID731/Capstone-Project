@@ -20,7 +20,6 @@ const SalesPage = () => {
     const [saleToDelete, setSaleToDelete] = useState(null);
 
     const canManageSales = hasRole('BUSINESS_OWNER') || hasRole('CASHIER');
-
     const totalSales = useMemo(() => {
         return salesRecords.reduce((sum, record) => sum + (record.amount || 0), 0);
     }, [salesRecords]);
@@ -80,8 +79,13 @@ const SalesPage = () => {
 
     const handleEdit = (sale) => {
         setEditingSale({ ...sale });
+<<<<<<< HEAD
         setItemName(sale.itemName || '');
         setAmount(sale.amount || '');
+=======
+        setItemName(sale.itemName);
+        setAmount(sale.amount);
+>>>>>>> parent of 04a489a (home page)
         setShowForm(true);
     };
 
@@ -109,6 +113,10 @@ const SalesPage = () => {
         setEditingSale(null);
         setItemName('');
         setAmount('');
+<<<<<<< HEAD
+=======
+        // customerName state is removed
+>>>>>>> parent of 04a489a (home page)
         setShowForm(false);
     };
 
@@ -220,11 +228,18 @@ const SalesPage = () => {
                                         transition={{ duration: 0.3 }}
                                         layout
                                     >
+<<<<<<< HEAD
                                         
                                         <h3><strong>Item Name:</strong> {sale.itemName || 'N/A'}</h3>                                        
                                         <p><strong>Sale ID: </strong> {sale.id}</p>
                                         <p><strong>Date: </strong> {new Date(sale.date).toLocaleString()}</p>
                                         <p><strong>Amount: ₦</strong>{sale.amount}</p>
+=======
+                                        <h3>Sale ID: {sale.id}</h3>
+                                        <p><strong>Item Name:</strong> {sale.itemName}</p>
+                                        <p><strong>Amount:</strong> ₦{sale.amount?.toFixed(2)}</p>
+                                        <p><strong>Date:</strong> {new Date(sale.date).toLocaleString()}</p>
+>>>>>>> parent of 04a489a (home page)
                                         {canManageSales && (
                                             <div className="card-actions">
                                                 <motion.button
