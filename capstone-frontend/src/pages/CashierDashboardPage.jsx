@@ -65,14 +65,6 @@ const CashierDashboardPage = () => {
             <header className="dashboard-header">
                 <h1>Cashier Dashboard</h1>
                 <p>Welcome, <span className="user-name">{user?.username}</span> ({user?.role})</p>
-                <motion.button
-                    onClick={logout}
-                    className="secondary-button"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                >
-                    Logout
-                </motion.button>
             </header>
 
             <section className="dashboard-content">

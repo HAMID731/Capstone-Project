@@ -132,7 +132,14 @@ exports.loginUser = async (req, res) => {
     try {
         const { username, password } = req.body;
 
-        const user = await User.findOne({ username });
+        if (!username || !password) {
+            return res.status(400).json({ message: 'Username and password are required.' });
+        }
+
+        const user = await User.findOne({ 
+            username: { $regex: new RegExp(`^${username}$`, 'i') } 
+        });
+
         if (!user) {
             return res.status(400).json({ message: 'Invalid credentials.' });
         }
@@ -160,13 +167,12 @@ exports.loginUser = async (req, res) => {
     }
 };
 
-
 exports.getAllUsers = async (req, res) => {
     try {
         if (req.user.role !== 'BUSINESS_OWNER') {
             return res.status(403).json({ message: 'Forbidden: Only Business Owners can view all users.' });
         }
-        const users = await User.find().select('-password'); // Exclude password
+        const users = await User.find().select('-password');
         res.status(200).json(users.map(user => ({
             id: user._id,
             username: user.username,
@@ -178,7 +184,6 @@ exports.getAllUsers = async (req, res) => {
         res.status(500).json({ message: 'Server error fetching users.' });
     }
 };
-
 
 exports.getUserProfile = async (req, res) => {
     try {
@@ -197,7 +202,6 @@ exports.getUserProfile = async (req, res) => {
         res.status(500).json({ message: 'Server error fetching profile.' });
     }
 };
-
 
 exports.updateUserProfile = async (req, res) => {
     try {
@@ -224,7 +228,6 @@ exports.updateUserProfile = async (req, res) => {
         res.status(500).json({ message: 'Server error updating profile.' });
     }
 };
-
 
 exports.deleteUser = async (req, res) => {
     try {
